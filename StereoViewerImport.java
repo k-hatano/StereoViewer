@@ -75,7 +75,7 @@ public class StereoViewerImport {
 		return resultList.toArray(new InputStream[0]);
 	}
 
-	final int BUFFER_SIZE = 1;
+	final int BUFFER_SIZE = 1024;
 
 	public byte[][] readFileIntoBytes(String path) throws FileNotFoundException, IOException {
 		int depth = 0;
@@ -86,30 +86,32 @@ public class StereoViewerImport {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
 		byte buffer[] = new byte[BUFFER_SIZE];
-		byte lastByte = -1;
+		byte lastByte = 0;
 		while (true) {
 			// TODO: 激遅い
 			int length = fileInputStream.read(buffer);
 			if (length < 0) {
 				break;
 			}
-			if (lastByte == 0xFF - 0x100 && buffer[0] == 0xD8 - 0x100) {
-				byte lastBuffer[] = new byte[1];
-				lastBuffer[0] = lastByte;
-				outputStream.write(lastBuffer, 0, BUFFER_SIZE);
-				depth++;
-			}
-			if (depth > 0) {
-				outputStream.write(buffer, 0, BUFFER_SIZE);
-			}
-			if (lastByte == 0xFF - 0x100 && buffer[0] == 0xD9 - 0x100) {
-				depth--;
-				if (depth == 0) {
-					resultList.add(outputStream.toByteArray());
-					outputStream = new ByteArrayOutputStream();
+			for (int i = 0; i < length; i++) {
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100) {
+					byte lastBuffer[] = {lastByte};
+					outputStream.write(lastBuffer, 0, 1);
+					depth++;
 				}
+				if (depth > 0) {
+					byte currentBuffer[] = {buffer[i]};
+					outputStream.write(currentBuffer, 0, 1);
+				}
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100) {
+					depth--;
+					if (depth == 0) {
+						resultList.add(outputStream.toByteArray());
+						outputStream = new ByteArrayOutputStream();
+					}
+				}
+				lastByte = buffer[i];
 			}
-			lastByte = buffer[0];
 		}
 
 		return resultList.toArray(new byte[0][0]);
