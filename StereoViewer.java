@@ -103,8 +103,9 @@ public class StereoViewer extends JFrame implements ActionListener {
 		glGridLayout = new GridLayout(1,1);
 		pCanvasPanel.add(leftStereoViewerCanvas);
 		pCanvasPanel.setLayout(glGridLayout);
-		this.setBounds(this.getBounds());
+		Rectangle originalBounds = this.getBounds();
 		this.pack();
+		this.setBounds(originalBounds);
 		this.invalidate();
 	}
 
@@ -116,8 +117,9 @@ public class StereoViewer extends JFrame implements ActionListener {
 		pCanvasPanel.add(leftStereoViewerCanvas);
 		pCanvasPanel.add(rightStereoViewerCanvas);
 		pCanvasPanel.setLayout(glGridLayout);
-		this.setBounds(this.getBounds());
+		Rectangle originalBounds = this.getBounds();
 		this.pack();
+		this.setBounds(originalBounds);
 		this.invalidate();
 	}
 
