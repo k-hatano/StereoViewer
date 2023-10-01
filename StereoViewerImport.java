@@ -12,10 +12,18 @@ import javax.swing.filechooser.*;
 public class StereoViewerImport {
 	StereoViewer parent;
 	File lastFile = null;
-	ArrayList<String> importHistory = new ArrayList<String>();
+	ArrayList<String> lImportHistory = new ArrayList<String>();
 
 	public StereoViewerImport(StereoViewer StereoViewer) {
 		parent = StereoViewer;
+	}
+
+	public void selectImageAt(int index) {
+		parent.cbHistoryPulldown.setSelectedIndex(index);
+	}
+
+	public String getCurrentFilePath() {
+		return (String)(parent.cbHistoryPulldown.getSelectedItem());
 	}
 
 	public void showImportFileDialog() {
@@ -56,16 +64,16 @@ public class StereoViewerImport {
 	}
 
 	public void cleanFileHistory() {
-		importHistory = new ArrayList<String>();
-		parent.importHistoryUpdated(importHistory.toArray(new String[0]), null);
+		lImportHistory = new ArrayList<String>();
+		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null);
 	}
 
 	public void addFileToHistoryWithoutUpdating(String path) {
-		importHistory.add(path);
+		lImportHistory.add(path);
 	}
 
 	public void requestUpdateImportHistory() {
-		parent.importHistoryUpdated(importHistory.toArray(new String[0]), null);
+		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null);
 	}
 
 	public void importImageFromFile(File file) {
@@ -93,9 +101,9 @@ public class StereoViewerImport {
 				resultList.add(image);
 			}
 
-			if (!importHistory.contains(path)) {
-				importHistory.add(path);
-				parent.importHistoryUpdated(importHistory.toArray(new String[0]), path);
+			if (!lImportHistory.contains(path)) {
+				lImportHistory.add(path);
+				parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), path);
 			}
 
 			return resultList.toArray(new Image[0]);

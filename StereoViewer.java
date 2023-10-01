@@ -4,19 +4,22 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 import java.io.*;
 import java.util.*;
-
 import javax.swing.*;
+import javax.swing.border.*;
 
 public class StereoViewer extends JFrame implements ActionListener {
-	JPanel pHeaderPanel, pCanvasPanel;
+	JPanel pNavigatePanel ,pHeaderPanel, pCanvasPanel, pFileSelectorPanel;
 	JMenuBar mbMenuBar;
 	JMenu mFile, mStereoscopy;
-	JMenuItem miOpen,miPrevImage,miNextImage,miCleanFileHistory,miQuit;
+	JMenuItem miOpen,miPrevImage,miNextImage,miCleanFileHistory,miShowGridList,miQuit;
 	JMenuItem miMonoscopic,miStereoscopic,miSwitchImages;
 	GridLayout glGridLayout;
 	StereoViewerImport imageViewerImport;
 	StereoViewerCanvas leftStereoViewerCanvas, rightStereoViewerCanvas;
 	JComboBox cbHistoryPulldown;
+	BorderLayout blFileSelectorLayout;
+	JButton bOpen, bGridList, bPrevImage, bNextImage;
+	StereoViewerGridList svglGridList;
 	
 	StereoViewer() {
 		super();
@@ -45,6 +48,10 @@ public class StereoViewer extends JFrame implements ActionListener {
 		miCleanFileHistory.addActionListener(this);
 		mFile.add(miCleanFileHistory);
 		mFile.addSeparator();
+		miShowGridList = new JMenuItem("Show Grid List...");
+		miShowGridList.addActionListener(this);
+		mFile.add(miShowGridList);
+		mFile.addSeparator();
 		miQuit = new JMenuItem("Quit");
 		miQuit.addActionListener(this);
 		miQuit.setAccelerator(KeyStroke.getKeyStroke('Q',KeyEvent.CTRL_MASK));
@@ -67,7 +74,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		setJMenuBar(mbMenuBar);
 
 		pCanvasPanel = new JPanel();
-		glGridLayout = new GridLayout(1,1);
+		glGridLayout = new GridLayout(1, 1);
 		pCanvasPanel.setLayout(glGridLayout);
 
 		leftStereoViewerCanvas = new StereoViewerCanvas(this);
@@ -79,9 +86,30 @@ public class StereoViewer extends JFrame implements ActionListener {
 
 		add("Center", pCanvasPanel);
 
+		pNavigatePanel = new JPanel();
+		pNavigatePanel.setLayout(new GridLayout(1, 2));
+		pNavigatePanel.setBorder(BorderFactory.createEmptyBorder());
+		bPrevImage = new JButton("<");
+		bPrevImage.addActionListener(this);
+		pNavigatePanel.add(bPrevImage);
+		bNextImage = new JButton(">");
+		bNextImage.addActionListener(this);
+		pNavigatePanel.add(bNextImage);
+
+		pFileSelectorPanel = new JPanel();
+		blFileSelectorLayout = new BorderLayout();
+		pFileSelectorPanel.setLayout(blFileSelectorLayout);
 		cbHistoryPulldown = new JComboBox(new String[0]);
 		cbHistoryPulldown.addActionListener(this);
-		add("North", cbHistoryPulldown);
+		pFileSelectorPanel.add("Center", cbHistoryPulldown);
+		bOpen = new JButton("Open");
+		bOpen.addActionListener(this);
+		// pFileSelectorPanel.add("West", bOpen);
+		bGridList = new JButton("Grid List");
+		bGridList.addActionListener(this);
+		pFileSelectorPanel.add("East", bGridList);
+		pFileSelectorPanel.add("West", pNavigatePanel);
+		add("North", pFileSelectorPanel);
 
 		pHeaderPanel = new JPanel();
 		pHeaderPanel.setLayout(new BorderLayout());
@@ -102,14 +130,20 @@ public class StereoViewer extends JFrame implements ActionListener {
 			closeWindow();
 		} else if (source == miOpen) {
 			imageViewerImport.showImportFileDialog();
-		} else if (source == miPrevImage) {
+		} else if (source == bOpen) {
+			imageViewerImport.showImportFileDialog();
+		} else if (source == miPrevImage || source == bPrevImage) {
 			if (cbHistoryPulldown.getSelectedIndex() > 0) {
 				cbHistoryPulldown.setSelectedIndex(cbHistoryPulldown.getSelectedIndex() - 1);
 			}
-		} else if (source == miNextImage) {
+		} else if (source == miNextImage || source == bNextImage) {
 			if (cbHistoryPulldown.getSelectedIndex() < cbHistoryPulldown.getItemCount() - 1) {
 				cbHistoryPulldown.setSelectedIndex(cbHistoryPulldown.getSelectedIndex() + 1);
 			}
+		} else if (source == miShowGridList) {
+			showGridList();
+		} else if (source == bGridList) {
+			showGridList();
 		} else if (source == miCleanFileHistory) {
 			imageViewerImport.cleanFileHistory();
 		} else if (source == miMonoscopic) {
@@ -129,11 +163,19 @@ public class StereoViewer extends JFrame implements ActionListener {
 		}
 	}
 
+	public void showGridList() {
+		if (svglGridList == null) {
+			svglGridList = new StereoViewerGridList(imageViewerImport);
+		}
+		svglGridList.show();
+		svglGridList.updateGridList();
+	}
+
 	public void showAsMonoscopic() {
 		pCanvasPanel.remove(leftStereoViewerCanvas);
 		pCanvasPanel.remove(rightStereoViewerCanvas);
 
-		glGridLayout = new GridLayout(1,1);
+		glGridLayout = new GridLayout(1, 1);
 		pCanvasPanel.add(leftStereoViewerCanvas);
 		pCanvasPanel.setLayout(glGridLayout);
 		Rectangle originalBounds = this.getBounds();
@@ -146,7 +188,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		pCanvasPanel.remove(leftStereoViewerCanvas);
 		pCanvasPanel.remove(rightStereoViewerCanvas);
 
-		glGridLayout = new GridLayout(1,2);
+		glGridLayout = new GridLayout(1, 2);
 		pCanvasPanel.add(leftStereoViewerCanvas);
 		pCanvasPanel.add(rightStereoViewerCanvas);
 		pCanvasPanel.setLayout(glGridLayout);
@@ -175,6 +217,10 @@ public class StereoViewer extends JFrame implements ActionListener {
 			}
 		}
 		cbHistoryPulldown.setSelectedIndex(selectedIndex);
+	}
+
+	public String getCurrentFilePath() {
+		return imageViewerImport.getCurrentFilePath();
 	}
 
 	class Dropper extends DropTargetAdapter{
