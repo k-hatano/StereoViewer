@@ -6,8 +6,8 @@ import javax.swing.*;
 import java.awt.datatransfer.*;
 
 public class StereoViewerGridList extends JFrame implements AdjustmentListener {
-	final int XMAX = 4;
-	final int YMAX = 4;
+	final int XMAX = 5;
+	final int YMAX = 5;
 	final int GRID_SIZE = 160;
 
 	StereoViewerImport parent;
@@ -101,6 +101,9 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 						try {
 							String path = parent.parent.lImportHistory.get(i);
 							Image img1 = ImageIO.read(new File(path));
+							if (img1 == null) {
+								continue;
+							}
 
 							int left = 0;
 							int top = 0;

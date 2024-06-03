@@ -45,6 +45,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		miNextImage.setAccelerator(KeyStroke.getKeyStroke(']',KeyEvent.CTRL_MASK));
 		mFile.add(miNextImage);
 		miCleanFileHistory = new JMenuItem("Clean File History");
+		miCleanFileHistory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK));
 		miCleanFileHistory.addActionListener(this);
 		mFile.add(miCleanFileHistory);
 		mFile.addSeparator();
@@ -217,6 +218,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 			}
 		}
 		cbHistoryPulldown.setSelectedIndex(selectedIndex);
+		svglGridList.updateGridList();
 	}
 
 	public String getCurrentFilePath() {
