@@ -63,10 +63,14 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 		parent.selectImageAt(index);
 	}
 
+	public void removeFromHistoryAt(int index) {
+		parent.removeFromHistoryAt(index);
+	}
+
 	private class StereoViewerGridListCanvas extends Canvas implements MouseListener, MouseWheelListener, ActionListener {
 		StereoViewerGridList parent;
 		JPopupMenu pmPopupMenu;
-		JMenuItem miFileName, miShowInMainWindow, miCopyFullPath;
+		JMenuItem miFileName, miShowInMainWindow, miCopyFullPath, miRemoveFromHistory;
 		int wheelDelta = 0;
 
 		public StereoViewerGridListCanvas (StereoViewerGridList gridList) {
@@ -85,6 +89,10 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 			miCopyFullPath = new JMenuItem("Copy Full Path");
 			miCopyFullPath.addActionListener(this);
 			pmPopupMenu.add(miCopyFullPath);
+			pmPopupMenu.addSeparator();
+			miRemoveFromHistory = new JMenuItem("Remove From File History");
+			miRemoveFromHistory.addActionListener(this);
+			pmPopupMenu.add(miRemoveFromHistory);
 		}
 
 		public void paint(final Graphics g){
@@ -203,6 +211,8 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 				StringSelection selection = new StringSelection(fileName);
 				clipboard.setContents(selection, null);
+			} else if (source == miRemoveFromHistory) {
+				removeFromHistoryAt(nClickedIndex);
 			}
 		}
 

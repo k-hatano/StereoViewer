@@ -11,7 +11,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 	JPanel pNavigatePanel ,pHeaderPanel, pCanvasPanel, pFileSelectorPanel;
 	JMenuBar mbMenuBar;
 	JMenu mFile, mStereoscopy;
-	JMenuItem miOpen,miPrevImage,miNextImage,miCleanFileHistory,miShowGridList,miQuit;
+	JMenuItem miOpen,miPrevImage,miNextImage,miCleanFileHistory,miShowGridList,miQuit,miExtract;
 	JMenuItem miMonoscopic,miStereoscopic,miSwitchImages;
 	GridLayout glGridLayout;
 	StereoViewerImport imageViewerImport;
@@ -20,6 +20,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 	BorderLayout blFileSelectorLayout;
 	JButton bOpen, bGridList, bPrevImage, bNextImage;
 	StereoViewerGridList svglGridList;
+	boolean bIsStereoscopic = false;
 	
 	StereoViewer() {
 		super();
@@ -48,6 +49,10 @@ public class StereoViewer extends JFrame implements ActionListener {
 		miCleanFileHistory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK));
 		miCleanFileHistory.addActionListener(this);
 		mFile.add(miCleanFileHistory);
+		mFile.addSeparator();
+		miExtract = new JMenuItem("Extract .mpo File To .jpg Files");
+		miExtract.addActionListener(this);
+		mFile.add(miExtract);
 		mFile.addSeparator();
 		miShowGridList = new JMenuItem("Show Grid List...");
 		miShowGridList.addActionListener(this);
@@ -133,6 +138,8 @@ public class StereoViewer extends JFrame implements ActionListener {
 			imageViewerImport.showImportFileDialog();
 		} else if (source == bOpen) {
 			imageViewerImport.showImportFileDialog();
+		} else if (source == miExtract) {
+			imageViewerImport.showExtractFileDialog();
 		} else if (source == miPrevImage || source == bPrevImage) {
 			if (cbHistoryPulldown.getSelectedIndex() > 0) {
 				cbHistoryPulldown.setSelectedIndex(cbHistoryPulldown.getSelectedIndex() - 1);
@@ -152,10 +159,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		} else if (source == miStereoscopic) {
 			showAsStereoscopic();
 		} else if (source == miSwitchImages) {
-			Image newLeftImage = rightStereoViewerCanvas.iFileImage;
-			Image newRightImage = leftStereoViewerCanvas.iFileImage;
-			leftStereoViewerCanvas.paintImage(newLeftImage);
-			rightStereoViewerCanvas.paintImage(newRightImage);
+			switchImages();
 		} else if (source == cbHistoryPulldown) {
 			if (cbHistoryPulldown.getSelectedItem() != null) {
 				String path = (String)(cbHistoryPulldown.getSelectedItem());
@@ -183,6 +187,8 @@ public class StereoViewer extends JFrame implements ActionListener {
 		this.pack();
 		this.setBounds(originalBounds);
 		this.invalidate();
+
+		bIsStereoscopic = false;
 	}
 
 	public void showAsStereoscopic() {
@@ -197,6 +203,15 @@ public class StereoViewer extends JFrame implements ActionListener {
 		this.pack();
 		this.setBounds(originalBounds);
 		this.invalidate();
+
+		bIsStereoscopic = true;
+	}
+
+	public void switchImages() {
+		Image newLeftImage = rightStereoViewerCanvas.iFileImage;
+		Image newRightImage = leftStereoViewerCanvas.iFileImage;
+		leftStereoViewerCanvas.paintImage(newLeftImage);
+		rightStereoViewerCanvas.paintImage(newRightImage);
 	}
 
 	public static void main(String[] argv){
@@ -208,8 +223,14 @@ public class StereoViewer extends JFrame implements ActionListener {
 		System.exit(0);
 	}
 
-	public void importHistoryUpdated(String history[], String currentFile) {
+	public void importHistoryUpdated(String history[], String currentFile, boolean retainSelection) {
 		int selectedIndex = history.length - 1;
+		if (retainSelection) {
+			selectedIndex = cbHistoryPulldown.getSelectedIndex();
+			if (selectedIndex >= cbHistoryPulldown.getItemCount() - 1) {
+				selectedIndex--;
+			}
+		}
 		cbHistoryPulldown.removeAllItems();
 		for (int i = 0; i < history.length; i++) {
 			cbHistoryPulldown.addItem(history[i]);
@@ -223,6 +244,10 @@ public class StereoViewer extends JFrame implements ActionListener {
 
 	public String getCurrentFilePath() {
 		return imageViewerImport.getCurrentFilePath();
+	}
+
+	public boolean isStereoscopic() {
+		return bIsStereoscopic;
 	}
 
 	class Dropper extends DropTargetAdapter{

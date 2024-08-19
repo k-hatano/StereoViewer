@@ -22,6 +22,11 @@ public class StereoViewerImport {
 		parent.cbHistoryPulldown.setSelectedIndex(index);
 	}
 
+	public void removeFromHistoryAt(int index) {
+		lImportHistory.remove(index);
+		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null, true);
+	}
+
 	public String getCurrentFilePath() {
 		return (String)(parent.cbHistoryPulldown.getSelectedItem());
 	}
@@ -63,9 +68,27 @@ public class StereoViewerImport {
 		}
 	}
 
+	public void showExtractFileDialog() {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		chooser.addChoosableFileFilter(new FileNameExtensionFilter("JPEG Multi-Picture Object (.mpo)", "mpo"));
+		if (lastFile != null) {
+			chooser.setSelectedFile(lastFile);
+		}
+		int res = chooser.showOpenDialog(this.parent);
+		if (res == JFileChooser.APPROVE_OPTION) {
+			File file = chooser.getSelectedFile();
+			try {
+				this.extractImage(file);
+			} catch (IOException ex) {
+	            ex.printStackTrace();
+	        }
+		}
+	}
+
 	public void cleanFileHistory() {
 		lImportHistory = new ArrayList<String>();
-		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null);
+		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null, false);
 	}
 
 	public void addFileToHistoryWithoutUpdating(String path) {
@@ -73,7 +96,7 @@ public class StereoViewerImport {
 	}
 
 	public void requestUpdateImportHistory() {
-		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null);
+		parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), null, false);
 	}
 
 	public void importImageFromFile(File file) {
@@ -103,7 +126,7 @@ public class StereoViewerImport {
 
 			if (!lImportHistory.contains(path)) {
 				lImportHistory.add(path);
-				parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), path);
+				parent.importHistoryUpdated(lImportHistory.toArray(new String[0]), path, false);
 			}
 
 			return resultList.toArray(new Image[0]);
@@ -168,5 +191,57 @@ public class StereoViewerImport {
 		}
 
 		return resultList.toArray(new byte[0][0]);
+	}
+
+	public void extractImage(File file) throws IOException {
+		int filesIndex = 1;
+
+		int depth = 0;
+		java.util.List<byte[]> resultList = new ArrayList<byte[]>();
+
+		FileInputStream fileInputStream = new FileInputStream(file);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+		byte buffer[] = new byte[BUFFER_SIZE];
+		byte lastByte = 0;
+		while (true) {
+			// TODO: 激遅い
+			int length = fileInputStream.read(buffer);
+			if (length < 0) {
+				break;
+			}
+			for (int i = 0; i < length; i++) {
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100) {
+					byte lastBuffer[] = {lastByte};
+					outputStream.write(lastBuffer, 0, 1);
+					depth++;
+				}
+				if (depth > 0) {
+					byte currentBuffer[] = {buffer[i]};
+					outputStream.write(currentBuffer, 0, 1);
+				}
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100) {
+					depth--;
+					if (depth == 0) {
+						resultList.add(outputStream.toByteArray());
+						outputStream = new ByteArrayOutputStream();
+					}
+				}
+				lastByte = buffer[i];
+			}
+		}
+
+		String dirPath = file.getAbsolutePath().replaceAll(".MPO", ".mpo").replaceAll(".mpo", "_extracted");
+		File dir = new File(dirPath);
+		dir.mkdir();
+
+		String singleFileName = file.getName();
+		for (int i = 0; i < resultList.size(); i++) {
+			String path = dirPath + File.separator + singleFileName.replaceAll(".MPO", ".mpo").replaceAll(".mpo", "_" + (i < 9 ? "0" : "") + (i + 1) + ".jpg");
+			File newFile = new File(path);
+			try (FileOutputStream newOutputStream = new FileOutputStream(newFile)) {
+			    newOutputStream.write(resultList.get(i));
+			}
+		}
 	}
 }

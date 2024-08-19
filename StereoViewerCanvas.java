@@ -14,7 +14,7 @@ public class StereoViewerCanvas extends Canvas implements MouseListener, MouseMo
 	Image iFileImage = null;
 
 	JPopupMenu pmPopupMenu;
-	JMenuItem miCopyFullPath, miCopyImage;
+	JMenuItem miCopyFullPath, miCopyImage, miSwitchImages;
 
 	public StereoViewerCanvas(StereoViewer StereoViewer) {
 		parent = StereoViewer;
@@ -31,6 +31,10 @@ public class StereoViewerCanvas extends Canvas implements MouseListener, MouseMo
 		miCopyImage = new JMenuItem("Copy Image");
 		miCopyImage.addActionListener(this);
 		pmPopupMenu.add(miCopyImage);
+		pmPopupMenu.addSeparator();
+		miSwitchImages = new JMenuItem("Switch Images");
+		miSwitchImages.addActionListener(this);
+		pmPopupMenu.add(miSwitchImages);
 	}
 
 	public void update(Graphics g){
@@ -95,6 +99,7 @@ public class StereoViewerCanvas extends Canvas implements MouseListener, MouseMo
 	@Override
 	public void mousePressed(MouseEvent e) {
 		if (e.getButton() == MouseEvent.BUTTON3 || (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
+			miSwitchImages.setEnabled(parent.isStereoscopic());
 			togglePopup(e);
 		}
 	}
@@ -147,6 +152,8 @@ public class StereoViewerCanvas extends Canvas implements MouseListener, MouseMo
 	        ImageSelection imageSelection = new ImageSelection(this.iFileImage);
 	        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 	        clipboard.setContents(imageSelection, null);
+		} else if (source == miSwitchImages) {
+			parent.switchImages();
 		}
 	}
 
