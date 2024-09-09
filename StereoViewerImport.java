@@ -55,6 +55,16 @@ public class StereoViewerImport {
 				if (filesInFolder.length <= 0) {
 					return;
 				}
+				ArrayList<File> filesInFolderUnsortedList = new ArrayList<File>();
+				for (int j = 0; j < filesInFolder.length; j++) {
+					filesInFolderUnsortedList.add(filesInFolder[j]);
+				}
+				filesInFolderUnsortedList.sort(new Comparator<File>(){
+					public int compare(File a, File b) {
+						return a.getAbsolutePath().compareTo(b.getAbsolutePath());
+					}
+				});
+				filesInFolder = filesInFolderUnsortedList.toArray(new File[0]);
 				for (int j = 0; j < filesInFolder.length; j++) {
 					addFileToHistoryWithoutUpdating(filesInFolder[j].getAbsolutePath());
 				}
@@ -79,8 +89,10 @@ public class StereoViewerImport {
 		if (res == JFileChooser.APPROVE_OPTION) {
 			File file = chooser.getSelectedFile();
 			try {
-				this.extractImage(file);
+				int result = this.extractImage(file);
+				JOptionPane.showMessageDialog(parent, new JLabel("Extracted to " + result + " files."));
 			} catch (IOException ex) {
+				JOptionPane.showMessageDialog(parent, new JLabel(ex.toString()));
 	            ex.printStackTrace();
 	        }
 		}
@@ -193,8 +205,8 @@ public class StereoViewerImport {
 		return resultList.toArray(new byte[0][0]);
 	}
 
-	public void extractImage(File file) throws IOException {
-		int filesIndex = 1;
+	public int extractImage(File file) throws IOException {
+		int filesIndex = 0;
 
 		int depth = 0;
 		java.util.List<byte[]> resultList = new ArrayList<byte[]>();
@@ -241,7 +253,9 @@ public class StereoViewerImport {
 			File newFile = new File(path);
 			try (FileOutputStream newOutputStream = new FileOutputStream(newFile)) {
 			    newOutputStream.write(resultList.get(i));
+			    filesIndex++;
 			}
 		}
+		return filesIndex;
 	}
 }

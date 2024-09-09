@@ -45,7 +45,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		miNextImage.addActionListener(this);
 		miNextImage.setAccelerator(KeyStroke.getKeyStroke(']',KeyEvent.CTRL_MASK));
 		mFile.add(miNextImage);
-		miCleanFileHistory = new JMenuItem("Clean File History");
+		miCleanFileHistory = new JMenuItem("Remove All Immages From History");
 		miCleanFileHistory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK));
 		miCleanFileHistory.addActionListener(this);
 		mFile.add(miCleanFileHistory);
@@ -153,7 +153,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		} else if (source == bGridList) {
 			showGridList();
 		} else if (source == miCleanFileHistory) {
-			imageViewerImport.cleanFileHistory();
+			cleanFileHistory();
 		} else if (source == miMonoscopic) {
 			showAsMonoscopic();
 		} else if (source == miStereoscopic) {
@@ -166,6 +166,10 @@ public class StereoViewer extends JFrame implements ActionListener {
 				imageViewerImport.importImageFromFile(new File(path));
 			}
 		}
+	}
+
+	public void cleanFileHistory() {
+		imageViewerImport.cleanFileHistory();
 	}
 
 	public void showGridList() {
@@ -239,7 +243,9 @@ public class StereoViewer extends JFrame implements ActionListener {
 			}
 		}
 		cbHistoryPulldown.setSelectedIndex(selectedIndex);
-		svglGridList.updateGridList();
+		if (svglGridList != null) {
+			svglGridList.updateGridList();
+		}
 	}
 
 	public String getCurrentFilePath() {
@@ -280,8 +286,18 @@ public class StereoViewer extends JFrame implements ActionListener {
 							};
 							File[] filesInFolder = files.get(i).listFiles(filter);
 							if (filesInFolder.length <= 0) {
-								continue;
+								return;
 							}
+							ArrayList<File> filesInFolderUnsortedList = new ArrayList<File>();
+							for (int j = 0; j < filesInFolder.length; j++) {
+								filesInFolderUnsortedList.add(filesInFolder[j]);
+							}
+							filesInFolderUnsortedList.sort(new Comparator<File>(){
+								public int compare(File a, File b) {
+									return a.getAbsolutePath().compareTo(b.getAbsolutePath());
+								}
+							});
+							filesInFolder = filesInFolderUnsortedList.toArray(new File[0]);
 							for (int j = 0; j < filesInFolder.length; j++) {
 								imageViewerImport.addFileToHistoryWithoutUpdating(filesInFolder[j].getAbsolutePath());
 							}

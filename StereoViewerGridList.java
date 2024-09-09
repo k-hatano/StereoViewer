@@ -5,14 +5,21 @@ import javax.imageio.*;
 import javax.swing.*;
 import java.awt.datatransfer.*;
 
-public class StereoViewerGridList extends JFrame implements AdjustmentListener {
-	final int XMAX = 5;
-	final int YMAX = 5;
+public class StereoViewerGridList extends JFrame implements ActionListener, AdjustmentListener {
+	int XMAX = 5;
+	int YMAX = 5;
 	final int GRID_SIZE = 160;
 
 	StereoViewerImport parent;
 	StereoViewerGridListCanvas gridListCanvas;
 	JScrollBar sbScrollBar;
+
+	JMenuBar mbMenuBar;
+	JMenu mFile, mScroll, mGridSize;
+	JMenuItem miRemoveAll, miClose, miScrollToTop, miScrollUp, miScrollDown, miScrollToEnd;
+	JRadioButtonMenuItem miGrid1x5, miGrid2x2 ,miGrid3x3, miGrid4x4, miGrid5x5, miGrid6x6;
+
+	Image iImages[] = new Image[XMAX * YMAX];
 
 	int nGridSizeX = GRID_SIZE;
 	int nGridSizeY = GRID_SIZE;
@@ -26,11 +33,81 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 		setTitle("Grid List");
 		setLayout(new BorderLayout());
 
+		mbMenuBar = new JMenuBar();
+
+		mFile = new JMenu("File");
+		miRemoveAll = new JMenuItem("Remove All Immages From History");
+		miRemoveAll.addActionListener(this);
+		mFile.add(miRemoveAll);
+		mFile.addSeparator();
+		miClose = new JMenuItem("Close");
+		miClose.addActionListener(this);
+		miClose.setAccelerator(KeyStroke.getKeyStroke('W', KeyEvent.CTRL_MASK));
+		mFile.add(miClose);
+		mbMenuBar.add(mFile);
+
+		mScroll = new JMenu("Scroll");
+		miScrollToTop = new JMenuItem("To Top");
+		miScrollToTop.addActionListener(this);
+		miScrollToTop.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0));
+		mScroll.add(miScrollToTop);
+		miScrollUp = new JMenuItem("Up");
+		miScrollUp.addActionListener(this);
+		miScrollUp.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0));
+		mScroll.add(miScrollUp);
+		miScrollDown = new JMenuItem("Down");
+		miScrollDown.addActionListener(this);
+		miScrollDown.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0));
+		mScroll.add(miScrollDown);
+		miScrollToEnd = new JMenuItem("To End");
+		miScrollToEnd.addActionListener(this);
+		miScrollToEnd.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0));
+		mScroll.add(miScrollToEnd);
+		mbMenuBar.add(mScroll);
+
+		ButtonGroup group = new ButtonGroup();
+		mGridSize = new JMenu("Grid Size");
+		//miGrid1x5 = new JRadioButtonMenuItem("1 x 5");
+		//miGrid1x5.addActionListener(this);
+		//miGrid1x5.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, KeyEvent.CTRL_MASK));
+		//group.add(miGrid1x5);
+		//mGridSize.add(miGrid1x5);
+		miGrid2x2 = new JRadioButtonMenuItem("2 x 2");
+		miGrid2x2.addActionListener(this);
+		miGrid2x2.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, KeyEvent.CTRL_MASK));
+		group.add(miGrid2x2);
+		mGridSize.add(miGrid2x2);
+		miGrid3x3 = new JRadioButtonMenuItem("3 x 3");
+		miGrid3x3.addActionListener(this);
+		miGrid3x3.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD3, KeyEvent.CTRL_MASK));
+		group.add(miGrid3x3);
+		mGridSize.add(miGrid3x3);
+		miGrid4x4 = new JRadioButtonMenuItem("4 x 4");
+		miGrid4x4.addActionListener(this);
+		miGrid4x4.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD4, KeyEvent.CTRL_MASK));
+		group.add(miGrid4x4);
+		mGridSize.add(miGrid4x4);
+		miGrid5x5 = new JRadioButtonMenuItem("5 x 5");
+		miGrid5x5.addActionListener(this);
+		miGrid5x5.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD5, KeyEvent.CTRL_MASK));
+		group.add(miGrid5x5);
+		mGridSize.add(miGrid5x5);
+		miGrid6x6 = new JRadioButtonMenuItem("6 x 6");
+		miGrid6x6.addActionListener(this);
+		miGrid6x6.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD6, KeyEvent.CTRL_MASK));
+		group.add(miGrid6x6);
+		mGridSize.add(miGrid6x6);
+		mbMenuBar.add(mGridSize);
+
+		miGrid5x5.setSelected(true);
+
+		setJMenuBar(mbMenuBar);
+
 		this.addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
 				updateGridSize();
-				gridListCanvas.repaint();
+				// gridListCanvas.repaint();
 			}
 	    });
 
@@ -50,12 +127,15 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 	}
 
 	public void updateGridList() {
-		sbScrollBar.setMaximum((int)Math.floor(parent.lImportHistory.size() / (1.0 * XMAX * YMAX)));
+		int count = parent.lImportHistory.size();
+		sbScrollBar.setMaximum((int)Math.floor(count / (1.0 * XMAX * YMAX)));
 		sbScrollBar.setValue(0);
+		iImages = new Image[XMAX * YMAX];
 		gridListCanvas.repaint();
 	}
 
 	public void adjustmentValueChanged(AdjustmentEvent e) {
+		iImages = new Image[XMAX * YMAX];
 		gridListCanvas.repaint();
 	}
 
@@ -65,6 +145,55 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 
 	public void removeFromHistoryAt(int index) {
 		parent.removeFromHistoryAt(index);
+		iImages = new Image[XMAX * YMAX];
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		Object source = arg0.getSource();
+		if (source == miRemoveAll) {
+			parent.cleanFileHistory();
+		} else if (source == miClose) {
+			this.setVisible(false);
+		} else if (source == miScrollToTop) {
+			sbScrollBar.setValue(0);
+		} else if (source == miScrollUp) {
+			sbScrollBar.setValue(sbScrollBar.getValue() - 1);
+		} else if (source == miScrollDown) {
+			sbScrollBar.setValue(sbScrollBar.getValue() + 1);
+		} else if (source == miScrollToEnd) {
+			sbScrollBar.setValue(sbScrollBar.getMaximum());
+		} else if (source == miGrid1x5) {
+			XMAX = 1;
+			YMAX = 5;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid2x2) {
+			XMAX = 2;
+			YMAX = 2;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid3x3) {
+			XMAX = 3;
+			YMAX = 3;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid4x4) {
+			XMAX = 4;
+			YMAX = 4;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid5x5) {
+			XMAX = 5;
+			YMAX = 5;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid6x6) {
+			XMAX = 6;
+			YMAX = 6;
+			updateGridSize();
+			updateGridList();
+		}
 	}
 
 	private class StereoViewerGridListCanvas extends Canvas implements MouseListener, MouseWheelListener, ActionListener {
@@ -108,9 +237,18 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 					if (i < parent.parent.lImportHistory.size()) {
 						try {
 							String path = parent.parent.lImportHistory.get(i);
-							Image img1 = ImageIO.read(new File(path));
+							Image img1;
+							if (iImages[x + y * XMAX] != null) {
+								img1 = iImages[x + y * XMAX];
+							} else {
+								setTitle("Loading image (" + (x + y * XMAX + 1) + "/" + (XMAX * YMAX) +")");
+								img1 = ImageIO.read(new File(path));
+							}
 							if (img1 == null) {
 								continue;
+							}
+							if (iImages[x + y * XMAX] == null) {
+								iImages[x + y * XMAX] = img1;
 							}
 
 							int left = 0;
@@ -132,14 +270,19 @@ public class StereoViewerGridList extends JFrame implements AdjustmentListener {
 							top = (nGridSizeY - height) / 2;
 
 							grp.drawImage(img1, left + x * nGridSizeX, top + y * nGridSizeY, width, height, null);
-						} catch (IOException ignore) {
-
+						} catch (IOException ex) {
+							ex.printStackTrace();
+						} catch (Exception ex) {
+							ex.printStackTrace();
 						}
 					}
 				}
 			}
 
 			g.drawImage(img, 0, 0, this);
+
+			int count = parent.parent.lImportHistory.size();
+			setTitle("Grid List - " + count + " image" + (count == 1 ? "" : "s"));
 		}
 
 		@Override
