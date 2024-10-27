@@ -17,7 +17,7 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 	JMenuBar mbMenuBar;
 	JMenu mFile, mScroll, mGridSize;
 	JMenuItem miRemoveAll, miClose, miScrollToTop, miScrollUp, miScrollDown, miScrollToEnd;
-	JRadioButtonMenuItem miGrid1x5, miGrid2x2 ,miGrid3x3, miGrid4x4, miGrid5x5, miGrid6x6;
+	JRadioButtonMenuItem miGrid1x4, miGrid1x5, miGrid1x6, miGrid2x2 ,miGrid3x3, miGrid4x4, miGrid5x5, miGrid6x6;
 
 	Image iImages[] = new Image[XMAX * YMAX];
 
@@ -36,7 +36,7 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 		mbMenuBar = new JMenuBar();
 
 		mFile = new JMenu("File");
-		miRemoveAll = new JMenuItem("Remove All Immages From History");
+		miRemoveAll = new JMenuItem("Remove All Images From History");
 		miRemoveAll.addActionListener(this);
 		mFile.add(miRemoveAll);
 		mFile.addSeparator();
@@ -67,11 +67,21 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 
 		ButtonGroup group = new ButtonGroup();
 		mGridSize = new JMenu("Grid Size");
-		//miGrid1x5 = new JRadioButtonMenuItem("1 x 5");
-		//miGrid1x5.addActionListener(this);
-		//miGrid1x5.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, KeyEvent.CTRL_MASK));
-		//group.add(miGrid1x5);
-		//mGridSize.add(miGrid1x5);
+		miGrid1x4 = new JRadioButtonMenuItem("1 x 4");
+		miGrid1x4.addActionListener(this);
+		miGrid1x4.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD0, KeyEvent.CTRL_MASK));
+		group.add(miGrid1x4);
+		mGridSize.add(miGrid1x4);
+		miGrid1x5 = new JRadioButtonMenuItem("1 x 5");
+		miGrid1x5.addActionListener(this);
+		miGrid1x5.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD1, KeyEvent.CTRL_MASK));
+		group.add(miGrid1x5);
+		mGridSize.add(miGrid1x5);
+		miGrid1x6 = new JRadioButtonMenuItem("1 x 6");
+		miGrid1x6.addActionListener(this);
+		group.add(miGrid1x6);
+		mGridSize.add(miGrid1x6);
+		mGridSize.addSeparator();
 		miGrid2x2 = new JRadioButtonMenuItem("2 x 2");
 		miGrid2x2.addActionListener(this);
 		miGrid2x2.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_NUMPAD2, KeyEvent.CTRL_MASK));
@@ -163,9 +173,19 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			sbScrollBar.setValue(sbScrollBar.getValue() + 1);
 		} else if (source == miScrollToEnd) {
 			sbScrollBar.setValue(sbScrollBar.getMaximum());
+		} else if (source == miGrid1x4) {
+			XMAX = 1;
+			YMAX = 4;
+			updateGridSize();
+			updateGridList();
 		} else if (source == miGrid1x5) {
 			XMAX = 1;
 			YMAX = 5;
+			updateGridSize();
+			updateGridList();
+		} else if (source == miGrid1x6) {
+			XMAX = 1;
+			YMAX = 6;
 			updateGridSize();
 			updateGridList();
 		} else if (source == miGrid2x2) {

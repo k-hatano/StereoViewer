@@ -45,7 +45,7 @@ public class StereoViewer extends JFrame implements ActionListener {
 		miNextImage.addActionListener(this);
 		miNextImage.setAccelerator(KeyStroke.getKeyStroke(']',KeyEvent.CTRL_MASK));
 		mFile.add(miNextImage);
-		miCleanFileHistory = new JMenuItem("Remove All Immages From History");
+		miCleanFileHistory = new JMenuItem("Remove All Images From History");
 		miCleanFileHistory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,KeyEvent.CTRL_MASK | KeyEvent.SHIFT_MASK));
 		miCleanFileHistory.addActionListener(this);
 		mFile.add(miCleanFileHistory);
