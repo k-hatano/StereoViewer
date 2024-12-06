@@ -132,8 +132,12 @@ public class StereoViewerImport {
 		try {
 			InputStream inputStreams[] = getImageInputStream(path);
 			for (int i = 0; i < inputStreams.length; i++) {
-				Image image = ImageIO.read(inputStreams[i]);
-				resultList.add(image);
+				try {
+					Image image = ImageIO.read(inputStreams[i]);
+					resultList.add(image);
+				} catch (javax.imageio.IIOException ex) {
+		            ex.printStackTrace();
+		        }
 			}
 
 			if (!lImportHistory.contains(path)) {
@@ -175,6 +179,8 @@ public class StereoViewerImport {
 
 		byte buffer[] = new byte[BUFFER_SIZE];
 		byte lastByte = 0;
+		int skippableLength = 0;
+		int indexFromHead = 0;
 		while (true) {
 			// TODO: 激遅い
 			int length = fileInputStream.read(buffer);
@@ -182,27 +188,53 @@ public class StereoViewerImport {
 				break;
 			}
 			for (int i = 0; i < length; i++) {
-				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100) {
+				// if (lastByte == 0xFF - 0x100 && (buffer[i] == 0xD8 - 0x100 || buffer[i] == 0xD9 - 0x100)) {
+				// 	System.out.println("" + indexFromHead + " : [" + byteToUnsignedInt(lastByte) + "," + (i < length ? byteToUnsignedInt(buffer[i]) : "-") + "," + (i + 1 < length ? byteToUnsignedInt(buffer[i + 1]) : "-") + "," + (i + 2 < length ? byteToUnsignedInt(buffer[i + 2]) : "-") + "] depth="+depth);
+				// }
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100 && (i+1 >= length || buffer[i+1] == 0xFF - 0x100)) {
+					// System.out.println("FFD8 : " + indexFromHead);
 					byte lastBuffer[] = {lastByte};
 					outputStream.write(lastBuffer, 0, 1);
 					depth++;
-				}
-				if (depth > 0) {
-					byte currentBuffer[] = {buffer[i]};
-					outputStream.write(currentBuffer, 0, 1);
-				}
-				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100) {
+					skippableLength = byteToUnsignedInt(buffer[i + 3]) * 0x100 + byteToUnsignedInt(buffer[i + 4]);
+					// System.out.println("skippableLength = " + skippableLength);
+					// if (skippableLength >= length - i - 1) {
+					// 	skippableLength = length - i - 1;
+					// 	System.out.println("skippableLength trimmed to " + skippableLength);
+					// }
+				} else if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100 && (i+1 >= length || buffer[i+1] == 0xFF - 0x100)) {
+					// System.out.println("FFD9 : " + indexFromHead);
+					// System.out.println("          skippableLength : " + skippableLength);
 					depth--;
+					if (depth < 0) {
+						depth = 0;
+					}
 					if (depth == 0) {
 						resultList.add(outputStream.toByteArray());
 						outputStream = new ByteArrayOutputStream();
 					}
 				}
+				if (depth > 0) {
+					byte currentBuffer[] = {buffer[i]};
+					outputStream.write(currentBuffer, 0, 1);
+				}
+				
+				if (skippableLength > 0) {
+					skippableLength--;
+				}
 				lastByte = buffer[i];
+				indexFromHead++;
 			}
 		}
 
 		return resultList.toArray(new byte[0][0]);
+	}
+
+	public int byteToUnsignedInt(byte aByte) {
+		if (aByte < 0) {
+			return (int)(0x100 + aByte);
+		}
+		return (int)aByte;
 	}
 
 	public int extractImage(File file) throws IOException {
@@ -223,22 +255,25 @@ public class StereoViewerImport {
 				break;
 			}
 			for (int i = 0; i < length; i++) {
-				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100) {
+				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD8 - 0x100 && (i+1 >= length || buffer[i+1] == 0xFF - 0x100)) {
 					byte lastBuffer[] = {lastByte};
 					outputStream.write(lastBuffer, 0, 1);
 					depth++;
-				}
-				if (depth > 0) {
-					byte currentBuffer[] = {buffer[i]};
-					outputStream.write(currentBuffer, 0, 1);
-				}
-				if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100) {
+				} else if (lastByte == 0xFF - 0x100 && buffer[i] == 0xD9 - 0x100 && (i+1 >= length || buffer[i+1] == 0xFF - 0x100)) {
 					depth--;
+					if (depth < 0) {
+						depth = 0;
+					}
 					if (depth == 0) {
 						resultList.add(outputStream.toByteArray());
 						outputStream = new ByteArrayOutputStream();
 					}
 				}
+				if (depth > 0) {
+					byte currentBuffer[] = {buffer[i]};
+					outputStream.write(currentBuffer, 0, 1);
+				}
+				
 				lastByte = buffer[i];
 			}
 		}

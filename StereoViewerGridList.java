@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.*;
 import javax.imageio.*;
 import javax.swing.*;
 import java.awt.datatransfer.*;
@@ -15,15 +16,17 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 	JScrollBar sbScrollBar;
 
 	JMenuBar mbMenuBar;
-	JMenu mFile, mScroll, mGridSize;
+	JMenu mFile, mScroll, mGridSize, mFilterBy;
 	JMenuItem miRemoveAll, miClose, miScrollToTop, miScrollUp, miScrollDown, miScrollToEnd;
 	JRadioButtonMenuItem miGrid1x4, miGrid1x5, miGrid1x6, miGrid2x2 ,miGrid3x3, miGrid4x4, miGrid5x5, miGrid6x6;
+	JRadioButtonMenuItem miFilterByNone, miFilterByJpeg, miFilterByMpo;
 
 	Image iImages[] = new Image[XMAX * YMAX];
 
 	int nGridSizeX = GRID_SIZE;
 	int nGridSizeY = GRID_SIZE;
 	int nClickedIndex = 0;
+	int nFilterBy = 0;
 
 	StereoViewerGridList(StereoViewerImport stereoViewerImport) {
 		super();
@@ -108,8 +111,24 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 		group.add(miGrid6x6);
 		mGridSize.add(miGrid6x6);
 		mbMenuBar.add(mGridSize);
-
 		miGrid5x5.setSelected(true);
+
+		ButtonGroup groupFilter = new ButtonGroup();
+		mFilterBy = new JMenu("Filter By");
+		miFilterByNone = new JRadioButtonMenuItem("None (Show All)");
+		miFilterByNone.addActionListener(this);
+		groupFilter.add(miFilterByNone);
+		mFilterBy.add(miFilterByNone);
+		miFilterByJpeg = new JRadioButtonMenuItem("JPEG");
+		miFilterByJpeg.addActionListener(this);
+		groupFilter.add(miFilterByJpeg);
+		mFilterBy.add(miFilterByJpeg);
+		miFilterByMpo = new JRadioButtonMenuItem("MPO");
+		miFilterByMpo.addActionListener(this);
+		groupFilter.add(miFilterByMpo);
+		mFilterBy.add(miFilterByMpo);
+		mbMenuBar.add(mFilterBy);
+		miFilterByNone.setSelected(true);
 
 		setJMenuBar(mbMenuBar);
 
@@ -137,11 +156,49 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 	}
 
 	public void updateGridList() {
-		int count = parent.lImportHistory.size();
+		int count = filteredImportHistory().size();
 		sbScrollBar.setMaximum((int)Math.floor(count / (1.0 * XMAX * YMAX)));
 		sbScrollBar.setValue(0);
 		iImages = new Image[XMAX * YMAX];
 		gridListCanvas.repaint();
+	}
+
+	public ArrayList<String> importHistory() {
+		return parent.lImportHistory;
+	}
+
+	public ArrayList<String> filteredImportHistory() {
+		ArrayList<String> originalList = parent.lImportHistory;
+		if (nFilterBy == 1) {
+			ArrayList<String> result = new ArrayList<String>();
+			for (String str : originalList) {
+				if (str.endsWith(".jpg") || str.endsWith(".JPG") || str.endsWith(".jpeg") || str.endsWith(".JPEG")) {
+					result.add(str);
+				}
+			}
+			return result;
+		} else if (nFilterBy == 2) {
+			ArrayList<String> result = new ArrayList<String>();
+			for (String str : originalList) {
+				if (str.endsWith(".mpo") || str.endsWith(".MPO")) {
+					result.add(str);
+				}
+			}
+			return result;
+		} else {
+			return originalList;
+		}
+	}
+
+	public int convertIndexOnFilteredImportHistory(int index) {
+		String str = filteredImportHistory().get(index);
+		ArrayList<String> originalList = parent.lImportHistory;
+		for (int i = 0; i < originalList.size(); i++) {
+			if (originalList.get(i) == str) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	public void adjustmentValueChanged(AdjustmentEvent e) {
@@ -213,6 +270,15 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			YMAX = 6;
 			updateGridSize();
 			updateGridList();
+		} else if (source == miFilterByNone) {
+			nFilterBy = 0;
+			updateGridList();
+		} else if (source == miFilterByJpeg) {
+			nFilterBy = 1;
+			updateGridList();
+		} else if (source == miFilterByMpo) {
+			nFilterBy = 2;
+			updateGridList();
 		}
 	}
 
@@ -254,9 +320,9 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			for (int y = 0; y < YMAX; y++) {
 				for (int x = 0; x < XMAX; x++) {
 					int i = x + y * XMAX + sbScrollBar.getValue() * XMAX * YMAX;
-					if (i < parent.parent.lImportHistory.size()) {
+					if (i < parent.filteredImportHistory().size()) {
 						try {
-							String path = parent.parent.lImportHistory.get(i);
+							String path = parent.filteredImportHistory().get(i);
 							Image img1;
 							if (iImages[x + y * XMAX] != null) {
 								img1 = iImages[x + y * XMAX];
@@ -301,8 +367,14 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 
 			g.drawImage(img, 0, 0, this);
 
-			int count = parent.parent.lImportHistory.size();
-			setTitle("Grid List - " + count + " image" + (count == 1 ? "" : "s"));
+			int count = parent.filteredImportHistory().size();
+			String filterString = "";
+			if (nFilterBy == 1) {
+				filterString = " (Filtered By JPEG)";
+			} else if (nFilterBy == 2) {
+				filterString = " (Filtered By MPO)";
+			}
+			setTitle("Grid List - " + count + " image" + (count == 1 ? "" : "s") + filterString);
 		}
 
 		@Override
@@ -325,15 +397,16 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			int x = e.getX() / (this.getWidth() / XMAX);
 			int y = e.getY() / (this.getHeight() / YMAX);
 			nClickedIndex = sbScrollBar.getValue() * XMAX * YMAX + y * XMAX + x;
-			if (nClickedIndex >= parent.parent.lImportHistory.size()) {
+			if (nClickedIndex >= parent.filteredImportHistory().size()) {
 				return;
 			}
+			int convertedIndex = convertIndexOnFilteredImportHistory(nClickedIndex);
 			if (e.getButton() == MouseEvent.BUTTON3 || (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
-				String fileName = (new File(parent.parent.lImportHistory.get(nClickedIndex))).getAbsolutePath();
+				String fileName = (new File(parent.filteredImportHistory().get(convertedIndex))).getAbsolutePath();
 				miFileName.setText(fileName);
 				togglePopup(e);
 			} else {
-				selectImageAt(nClickedIndex);
+				selectImageAt(convertedIndex);
 			}
 		}
 
@@ -342,11 +415,11 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			int x = e.getX() / (this.getWidth() / XMAX);
 			int y = e.getY() / (this.getHeight() / YMAX);
 			nClickedIndex = sbScrollBar.getValue() * XMAX * YMAX + y * XMAX + x;
-			if (nClickedIndex >= parent.parent.lImportHistory.size()) {
+			if (nClickedIndex >= parent.filteredImportHistory().size()) {
 				return;
 			}
 			if (e.getButton() == MouseEvent.BUTTON3 || (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
-				String fileName = (new File(parent.parent.lImportHistory.get(nClickedIndex))).getAbsolutePath();
+				String fileName = (new File(parent.filteredImportHistory().get(nClickedIndex))).getAbsolutePath();
 				miFileName.setText(fileName);
 				togglePopup(e);
 			}
@@ -370,7 +443,7 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			if (source == miShowInMainWindow) {
 				selectImageAt(nClickedIndex);
 			} else if (source == miCopyFullPath) {
-				String fileName = (new File(parent.parent.lImportHistory.get(nClickedIndex))).getAbsolutePath();
+				String fileName = (new File(parent.filteredImportHistory().get(nClickedIndex))).getAbsolutePath();
 				Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 				StringSelection selection = new StringSelection(fileName);
 				clipboard.setContents(selection, null);
