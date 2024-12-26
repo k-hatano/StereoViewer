@@ -179,7 +179,7 @@ public class StereoViewerImport {
 
 		byte buffer[] = new byte[BUFFER_SIZE];
 		byte lastByte = 0;
-		int skippableLength = 0;
+		// int skippableLength = 0;
 		int indexFromHead = 0;
 		while (true) {
 			// TODO: 激遅い
@@ -196,7 +196,7 @@ public class StereoViewerImport {
 					byte lastBuffer[] = {lastByte};
 					outputStream.write(lastBuffer, 0, 1);
 					depth++;
-					skippableLength = byteToUnsignedInt(buffer[i + 3]) * 0x100 + byteToUnsignedInt(buffer[i + 4]);
+					// skippableLength = byteToUnsignedInt(buffer[i + 3]) * 0x100 + byteToUnsignedInt(buffer[i + 4]);
 					// System.out.println("skippableLength = " + skippableLength);
 					// if (skippableLength >= length - i - 1) {
 					// 	skippableLength = length - i - 1;
@@ -219,9 +219,9 @@ public class StereoViewerImport {
 					outputStream.write(currentBuffer, 0, 1);
 				}
 				
-				if (skippableLength > 0) {
-					skippableLength--;
-				}
+				// if (skippableLength > 0) {
+				// 	skippableLength--;
+				// }
 				lastByte = buffer[i];
 				indexFromHead++;
 			}

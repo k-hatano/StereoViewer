@@ -17,7 +17,7 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 
 	JMenuBar mbMenuBar;
 	JMenu mFile, mScroll, mGridSize, mFilterBy;
-	JMenuItem miRemoveAll, miClose, miScrollToTop, miScrollUp, miScrollDown, miScrollToEnd;
+	JMenuItem miRemoveAll, miClose, miScrollToTop, miScrollUp, miScrollDown, miScrollToEnd, miScrollToInput;
 	JRadioButtonMenuItem miGrid1x4, miGrid1x5, miGrid1x6, miGrid2x2 ,miGrid3x3, miGrid4x4, miGrid5x5, miGrid6x6;
 	JRadioButtonMenuItem miFilterByNone, miFilterByJpeg, miFilterByMpo;
 
@@ -26,7 +26,7 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 	int nGridSizeX = GRID_SIZE;
 	int nGridSizeY = GRID_SIZE;
 	int nClickedIndex = 0;
-	int nFilterBy = 0;
+	int nFilterBy = 0; /* 0:None, 1:mpo */
 
 	StereoViewerGridList(StereoViewerImport stereoViewerImport) {
 		super();
@@ -66,6 +66,10 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 		miScrollToEnd.addActionListener(this);
 		miScrollToEnd.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0));
 		mScroll.add(miScrollToEnd);
+		mScroll.addSeparator();
+		miScrollToInput = new JMenuItem("Input...");
+		miScrollToInput.addActionListener(this);
+		mScroll.add(miScrollToInput);
 		mbMenuBar.add(mScroll);
 
 		ButtonGroup group = new ButtonGroup();
@@ -230,6 +234,15 @@ public class StereoViewerGridList extends JFrame implements ActionListener, Adju
 			sbScrollBar.setValue(sbScrollBar.getValue() + 1);
 		} else if (source == miScrollToEnd) {
 			sbScrollBar.setValue(sbScrollBar.getMaximum());
+		} else if (source == miScrollToInput) {
+			String result = JOptionPane.showInputDialog(this, "Input page no (1-" + (sbScrollBar.getMaximum() + 1) + ")", (sbScrollBar.getValue() + 1));
+			try {
+				Integer resultInteger = Integer.parseInt(result);
+				System.out.println("resultInteger : " + resultInteger);
+				sbScrollBar.setValue(resultInteger - 1);
+			} catch (NumberFormatException ex) {
+				ex.printStackTrace();
+			}
 		} else if (source == miGrid1x4) {
 			XMAX = 1;
 			YMAX = 4;
